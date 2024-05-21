@@ -5,6 +5,9 @@
 	<head>
 	<body>
 		<img id="puppy1" src="puppy.png" style="height: 250px; width: 250px"></img>
+		<button text="ciao" onclick="textToSpeech('today is a wonderful day', 'audioPlayer')">CIAONE</button>
+		<audio id="audioPlayer" controls style="display:none;"></audio>
+		
 		<script type="text/javascript">
 			var API_URL = "https://api.openai.com/v1/";
 			var API_KEY = "sk-";
@@ -75,6 +78,35 @@
 						reject(error);
 					  }
 					});
+				});
+			}
+			
+			function textToSpeech(text, audoPlayerId) {
+				let data = {
+					model: "tts-1",
+					input: text,
+					voice: "alloy"
+				};
+				
+				$.post({
+				  url: API_URL+"audio/speech",
+				  contentType: "application/json",
+				  headers: {
+					"Authorization": "Bearer "+API_KEY
+				  },
+				  data: JSON.stringify(data),
+				  xhrFields: {
+					responseType: 'blob'
+				  },
+				 success: function(blob) {
+					const audioUrl = URL.createObjectURL(blob);
+					const audioPlayer = $('#'+audoPlayerId);
+					audioPlayer.attr('src', audioUrl);
+					audioPlayer[0].play();
+				  },
+				  error: function(error) {
+					console.error('Error:', error);
+				  }
 				});
 			}
 			
