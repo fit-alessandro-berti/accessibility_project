@@ -8,188 +8,196 @@
 		<button text="ciao" onclick="textToSpeech('today is a wonderful day', 'audioPlayer')">CIAONE</button>
 		<audio id="audioPlayer" controls style="display:none;"></audio>
 
-	  <button id="toggleRecording">Start Recording</button>
+		<button id="toggleRecording">Start Recording</button>
 		
 		<script type="text/javascript">
-			var API_URL = "https://api.openai.com/v1/";
-			var API_KEY = "sk-";
-			var AI_MODEL = "gpt-4o";
-			var TTS_MODEL = "tts-1";
-			var TTS_VOICE = "alloy";
-			
-			let mediaRecorder;
-			let audioChunks = [];
-			let isRecording = false;
-			
-			function textualInquiry(question) {
-				return new Promise((resolve, reject) => {
-					$.post({
-					  url: API_URL+"chat/completions",
-					  contentType: "application/json",
-					  headers: {
-						"Authorization": "Bearer "+API_KEY
-					  },
-					  data: JSON.stringify({
-						model: AI_MODEL,
-						messages: [
-						  {
-							role: "user",
-							content: question
-						  }
-						]
-					  }),
-					  success: function(response) {
-						resolve(response.choices[0].message.content);
-					  },
-					  error: function(error) {
-						reject(error);
-					  }
-					});
-				});
-			}
-			
-			function graphicalInquiry(imageId, question) {
-				let img = document.getElementById(imageId);
-				let canvas = document.createElement('canvas');
-				canvas.width = img.width;
-				canvas.height = img.height;
-				let ctx = canvas.getContext('2d');
-				ctx.drawImage(img, 0, 0);
-				let dataURL = canvas.toDataURL('image/png');
-				
-				return new Promise((resolve, reject) => {
-					$.post({
-					  url: API_URL+"chat/completions",
-					  contentType: "application/json",
-					  headers: {
-						"Authorization": "Bearer "+API_KEY
-					  },
-					  data: JSON.stringify({
-						model: AI_MODEL,
-						messages: [
-						  {
-							role: "user",
-							content: [{
-								"type": "text",
-								"text": question},
-								{
-								"type": "image_url",
-								"image_url": {"url": dataURL}
-								}]
-						  }
-						]
-					  }),
-					  success: function(response) {
-						resolve(response.choices[0].message.content);
-					  },
-					  error: function(error) {
-						reject(error);
-					  }
-					});
-				});
-			}
-			
-			function textToSpeech(text, audoPlayerId) {
-				let data = {
-					model: TTS_MODEL,
-					input: text,
-					voice: TTS_VOICE
-				};
-				
-				$.post({
-				  url: API_URL+"audio/speech",
-				  contentType: "application/json",
-				  headers: {
-					"Authorization": "Bearer "+API_KEY
-				  },
-				  data: JSON.stringify(data),
-				  xhrFields: {
-					responseType: 'blob'
-				  },
-				 success: function(blob) {
-					const audioUrl = URL.createObjectURL(blob);
-					const audioPlayer = $('#'+audoPlayerId);
-					audioPlayer.attr('src', audioUrl);
-					audioPlayer[0].play();
-				  },
-				  error: function(error) {
-					console.error(error);
-				  }
-				});
-			}
-			
-			async function speechToText(audioBlob) {
-			  const formData = new FormData();
-			  formData.append('file', audioBlob, 'speech.mp3');
-			  formData.append('model', 'whisper-1');
-			  formData.append('response_format', 'text');
+         var API_URL = "https://api.openai.com/v1/";
+         var API_KEY = "sk-";
+         var AI_MODEL = "gpt-4o";
+         var TTS_MODEL = "tts-1";
+         var TTS_VOICE = "alloy";
 
-				return new Promise((resolve, reject) => {
-				  $.ajax({
-					url: API_URL+'audio/transcriptions',
-					type: 'POST',
-					headers: {
-					  'Authorization': 'Bearer '+API_KEY
-					},
-					data: formData,
-					processData: false,
-					contentType: false,
-					success: function(response) {
-						resolve(response);
-					},
-					error: function(error) {
-					  console.error(error);
-					}
-				  });
-				});
-			}
-			
-			async function recordAudioForSTT() {
-				if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-				  alert('Your browser does not support audio recording.');
-				  return;
-				}
-				
-				if (!isRecording) {
-					audioChunks = null;
-					audioChunks = [];
-					
-				  // Start recording
-				  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-				  mediaRecorder = new MediaRecorder(stream);
+         let mediaRecorder;
+         let audioChunks = [];
+         let isRecording = false;
 
-					return new Promise((resolve, reject) => {
-					  mediaRecorder.ondataavailable = function(event) {
-						audioChunks.push(event.data);
-					  };
+         function textualInquiry(question) {
+             return new Promise((resolve, reject) => {
+                 $.post({
+                     url: API_URL + "chat/completions",
+                     contentType: "application/json",
+                     headers: {
+                         "Authorization": "Bearer " + API_KEY
+                     },
+                     data: JSON.stringify({
+                         model: AI_MODEL,
+                         messages: [{
+                             role: "user",
+                             content: question
+                         }]
+                     }),
+                     success: function(response) {
+                         resolve(response.choices[0].message.content);
+                     },
+                     error: function(error) {
+                         reject(error);
+                     }
+                 });
+             });
+         }
 
-					  mediaRecorder.onstop = function() {
-						const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+         function graphicalInquiry(imageId, question) {
+             let img = document.getElementById(imageId);
+             let canvas = document.createElement('canvas');
+             canvas.width = img.width;
+             canvas.height = img.height;
+             let ctx = canvas.getContext('2d');
+             ctx.drawImage(img, 0, 0);
+             let dataURL = canvas.toDataURL('image/png');
 
-						speechToText(audioBlob).then(function(data) { resolve(data) });
-					  };
-					  
-						mediaRecorder.start();
-						isRecording = true;
-					});
-				}
-			}
-		
-      $('#toggleRecording').click(function() {
-		
-		if (!isRecording) {
-			recordAudioForSTT().then(function(data) { console.log(data); });
-          $('#toggleRecording').text('Stop Recording');
-        } else {
-          // Stop recording
-			mediaRecorder.stop();
-			isRecording = false;
-          $('#toggleRecording').text('Start Recording');
-        }
-      });
-			
-			//textualInquiry("what is the result of 3+4?").then(response => { console.log(response); });
-			//graphicalInquiry("puppy1", "what is the race of the dog?").then(response => { console.log(response); });
+             return new Promise((resolve, reject) => {
+                 $.post({
+                     url: API_URL + "chat/completions",
+                     contentType: "application/json",
+                     headers: {
+                         "Authorization": "Bearer " + API_KEY
+                     },
+                     data: JSON.stringify({
+                         model: AI_MODEL,
+                         messages: [{
+                             role: "user",
+                             content: [{
+                                     "type": "text",
+                                     "text": question
+                                 },
+                                 {
+                                     "type": "image_url",
+                                     "image_url": {
+                                         "url": dataURL
+                                     }
+                                 }
+                             ]
+                         }]
+                     }),
+                     success: function(response) {
+                         resolve(response.choices[0].message.content);
+                     },
+                     error: function(error) {
+                         reject(error);
+                     }
+                 });
+             });
+         }
+
+         function textToSpeech(text, audoPlayerId) {
+             let data = {
+                 model: TTS_MODEL,
+                 input: text,
+                 voice: TTS_VOICE
+             };
+
+             $.post({
+                 url: API_URL + "audio/speech",
+                 contentType: "application/json",
+                 headers: {
+                     "Authorization": "Bearer " + API_KEY
+                 },
+                 data: JSON.stringify(data),
+                 xhrFields: {
+                     responseType: 'blob'
+                 },
+                 success: function(blob) {
+                     const audioUrl = URL.createObjectURL(blob);
+                     const audioPlayer = $('#' + audoPlayerId);
+                     audioPlayer.attr('src', audioUrl);
+                     audioPlayer[0].play();
+                 },
+                 error: function(error) {
+                     console.error(error);
+                 }
+             });
+         }
+
+         async function speechToText(audioBlob) {
+             const formData = new FormData();
+             formData.append('file', audioBlob, 'speech.mp3');
+             formData.append('model', 'whisper-1');
+             formData.append('response_format', 'text');
+
+             return new Promise((resolve, reject) => {
+                 $.ajax({
+                     url: API_URL + 'audio/transcriptions',
+                     type: 'POST',
+                     headers: {
+                         'Authorization': 'Bearer ' + API_KEY
+                     },
+                     data: formData,
+                     processData: false,
+                     contentType: false,
+                     success: function(response) {
+                         resolve(response);
+                     },
+                     error: function(error) {
+                         console.error(error);
+                     }
+                 });
+             });
+         }
+
+         async function recordAudioForSTT() {
+             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                 alert('Your browser does not support audio recording.');
+                 return;
+             }
+
+             if (!isRecording) {
+                 audioChunks = null;
+                 audioChunks = [];
+
+                 // Start recording
+                 const stream = await navigator.mediaDevices.getUserMedia({
+                     audio: true
+                 });
+                 mediaRecorder = new MediaRecorder(stream);
+
+                 return new Promise((resolve, reject) => {
+                     mediaRecorder.ondataavailable = function(event) {
+                         audioChunks.push(event.data);
+                     };
+
+                     mediaRecorder.onstop = function() {
+                         const audioBlob = new Blob(audioChunks, {
+                             type: 'audio/mp3'
+                         });
+
+                         speechToText(audioBlob).then(function(data) {
+                             resolve(data)
+                         });
+                     };
+
+                     mediaRecorder.start();
+                     isRecording = true;
+                 });
+             }
+         }
+
+         $('#toggleRecording').click(function() {
+
+             if (!isRecording) {
+                 recordAudioForSTT().then(function(data) {
+                     console.log(data);
+                 });
+                 $('#toggleRecording').text('Stop Recording');
+             } else {
+                 // Stop recording
+                 mediaRecorder.stop();
+                 isRecording = false;
+                 $('#toggleRecording').text('Start Recording');
+             }
+         });
+
+         //textualInquiry("what is the result of 3+4?").then(response => { console.log(response); });
+         //graphicalInquiry("puppy1", "what is the race of the dog?").then(response => { console.log(response); });
 		</script>
 	</body>
 </html>
