@@ -12,6 +12,8 @@
 			var API_URL = "https://api.openai.com/v1/";
 			var API_KEY = "sk-";
 			var AI_MODEL = "gpt-4o";
+			var TTS_MODEL = "tts-1";
+			var TTS_VOICE = "alloy";
 			
 			function textualInquiry(question) {
 				return new Promise((resolve, reject) => {
@@ -83,9 +85,9 @@
 			
 			function textToSpeech(text, audoPlayerId) {
 				let data = {
-					model: "tts-1",
+					model: TTS_MODEL,
 					input: text,
-					voice: "alloy"
+					voice: TTS_VOICE
 				};
 				
 				$.post({
